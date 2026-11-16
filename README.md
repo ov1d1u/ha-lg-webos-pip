@@ -116,7 +116,7 @@ On the integration page, click **Add PIP trigger**. Each trigger says *when X ha
 | Name | e.g. `Doorbell` |
 | Trigger entities | one or more entities, e.g. `binary_sensor.doorbell` or `event.doorbell_ring` |
 | Trigger state | optional. Empty means binary sensors, switches and input booleans fire on `on`, and everything else (e.g. **event entities**) fires on every change. Set it to fire on a specific state, like `open`. |
-| Camera *or* URL | what to show (see [Sources](#sources)) |
+| Camera/image *or* URL | what to show (see [Sources](#sources)) |
 | Label, stream type, position, size, close after | optional per-trigger overrides |
 
 Each trigger gets its own device with:
@@ -144,6 +144,11 @@ data:
   size: 25
   timeout: 20
 
+# Show the doorbell's latest snapshot; it updates while the PIP is open
+action: lg_webos_pip.show
+data:
+  camera: image.doorbell_snapshot
+
 # Close it again, e.g. when the door opens
 action: lg_webos_pip.close
 ```
@@ -159,6 +164,7 @@ action: lg_webos_pip.close
 ### Sources
 
 - **Camera entity**: any HA camera. HA signs the stream URLs, so the token never appears in a URL.
+- **Image entity** (`image.*`, e.g. a doorbell's snapshot): pass it as `camera`. The PIP shows its current picture and swaps in each new one as soon as HA has it. The stream type doesn't apply.
 - **URL**:
   - `.m3u8` plays as HLS.
   - URLs that look like MJPEG (`mjpeg`, `.cgi`, `action=stream`) or images display as an image stream.
@@ -193,8 +199,8 @@ data:
 
 | Param | Meaning |
 |---|---|
-| `camera` / `url` | what to show (`url` wins) |
-| `title` | label in the box (default: camera name) |
+| `camera` / `url` | what to show (`url` wins). `camera` may also be an `image.*` entity |
+| `title` | label in the box (default: the entity's name) |
 | `mode` | `mjpeg`, `snapshot`, `hls`, `webrtc` |
 | `position` | `top-right`, `top-left`, `bottom-right`, `bottom-left` |
 | `size` | width in % of the screen (10–100) |

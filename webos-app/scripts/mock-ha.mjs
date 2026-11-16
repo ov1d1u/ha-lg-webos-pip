@@ -1,7 +1,8 @@
 // Fake Home Assistant for testing the app in a desktop browser.
 //   npm run mock   ->  open http://localhost:8124/tv.html
 // Implements just the WebSocket commands the app uses, plus camera_proxy,
-// camera_proxy_stream (MJPEG) and HLS fed by an ffmpeg test pattern.
+// camera_proxy_stream (MJPEG), image_proxy and HLS fed by an ffmpeg test pattern.
+// image.doorbell_snapshot gets a new picture every 10 s.
 import { spawn } from 'node:child_process';
 import { createReadStream, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -14,6 +15,9 @@ const appDir = join(root, '.mock/app');
 const media = join(root, '.mock/media');
 const PORT = 8124;
 const CAMERAS = { 'camera.front_door': 'Front Door', 'camera.garden': 'Garden' };
+const IMAGES = { 'image.doorbell_snapshot': 'Doorbell Snapshot' };
+const IMAGE_INTERVAL = 10000;
+const imageState = () => new Date(Math.floor(Date.now() / IMAGE_INTERVAL) * IMAGE_INTERVAL).toISOString();
 
 rmSync(media, { recursive: true, force: true });
 mkdirSync(media, { recursive: true });
@@ -81,6 +85,13 @@ const server = createServer((req, res) => {
     return;
   }
 
+  const image = p.match(/^\/api\/image_proxy\/(image\.\w+)$/);
+  if (image) {
+    if (!signed(url) || !IMAGES[image[1]]) { res.writeHead(401).end(); return; }
+    sendFile(res, join(media, 'frame.jpg'));
+    return;
+  }
+
   const hls = p.match(/^\/api\/hls\/mock\/([\w.]+)$/);
   if (hls) { sendFile(res, join(media, hls[1])); return; }
 
@@ -93,6 +104,8 @@ wss.on('connection', (ws) => {
   const send = (m) => ws.send(JSON.stringify(m));
   const result = (id, r) => send({ id, type: 'result', success: true, result: r });
   const fail = (id, message) => send({ id, type: 'result', success: false, error: { code: 'mock', message } });
+  const timers = new Map();
+  ws.on('close', () => timers.forEach(clearInterval));
 
   send({ type: 'auth_required', ha_version: 'mock' });
   ws.on('message', (raw) => {
@@ -105,8 +118,21 @@ wss.on('connection', (ws) => {
     }
     switch (m.type) {
       case 'get_states':
-        return result(m.id, Object.entries(CAMERAS).map(([entity_id, friendly_name]) =>
-          ({ entity_id, state: 'idle', attributes: { friendly_name } })));
+        return result(m.id, [
+          ...Object.entries(CAMERAS).map(([entity_id, friendly_name]) =>
+            ({ entity_id, state: 'idle', attributes: { friendly_name } })),
+          ...Object.entries(IMAGES).map(([entity_id, friendly_name]) =>
+            ({ entity_id, state: imageState(), attributes: { friendly_name } }))
+        ]);
+      case 'subscribe_entities': {
+        const ids = (m.entity_ids || []).filter((id) => IMAGES[id]);
+        result(m.id, null);
+        const event = (key, wrap) => send({ id: m.id, type: 'event',
+          event: { [key]: Object.fromEntries(ids.map((id) => [id, wrap({ s: imageState() })])) } });
+        event('a', (s) => s);
+        timers.set(m.id, setInterval(() => event('c', (s) => ({ '+': s })), IMAGE_INTERVAL));
+        return;
+      }
       case 'auth/current_user':
         return result(m.id, { id: 'mock', name: 'Mock User', is_admin: true });
       case 'auth/sign_path':
@@ -119,6 +145,8 @@ wss.on('connection', (ws) => {
         result(m.id, null);
         return send({ id: m.id, type: 'event', event: { type: 'error', code: 'mock', message: 'mock HA has no WebRTC' } });
       case 'unsubscribe_events':
+        clearInterval(timers.get(m.subscription));
+        timers.delete(m.subscription);
         return result(m.id, null);
       default:
         return fail(m.id, 'unknown command ' + m.type);

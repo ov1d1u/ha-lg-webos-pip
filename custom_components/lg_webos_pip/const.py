@@ -30,6 +30,9 @@ SUBENTRY_TRIGGER: Final = "trigger"
 CONF_TRIGGER_ENTITIES: Final = "trigger_entities"
 CONF_TRIGGER_STATE: Final = "trigger_state"
 
+# What the `camera` field accepts: image entities show their latest picture.
+SOURCE_DOMAINS: Final = ["camera", "image"]
+
 MODES: Final = ["mjpeg", "snapshot", "hls", "webrtc"]
 POSITIONS: Final = ["top-right", "top-left", "bottom-right", "bottom-left"]
 

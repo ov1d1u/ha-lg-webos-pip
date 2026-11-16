@@ -54,6 +54,7 @@ from .const import (
     DOMAIN,
     MODES,
     POSITIONS,
+    SOURCE_DOMAINS,
     SUBENTRY_TRIGGER,
     WEBOSTV_DOMAIN,
 )
@@ -170,7 +171,7 @@ TRIGGER_SCHEMA = vol.Schema(
         vol.Required(CONF_NAME): TEXT,
         vol.Required(CONF_TRIGGER_ENTITIES): EntitySelector(EntitySelectorConfig(multiple=True)),
         vol.Optional(CONF_TRIGGER_STATE): TEXT,
-        vol.Optional(CONF_CAMERA): EntitySelector(EntitySelectorConfig(domain="camera")),
+        vol.Optional(CONF_CAMERA): EntitySelector(EntitySelectorConfig(domain=SOURCE_DOMAINS)),
         vol.Optional(CONF_URL): TEXT,
         vol.Optional(CONF_TITLE): TEXT,
         vol.Optional(CONF_MODE): MODE_SELECTOR,
@@ -182,7 +183,7 @@ TRIGGER_SCHEMA = vol.Schema(
 
 
 class PipTriggerSubentryFlow(ConfigSubentryFlow):
-    """Add or edit a PIP trigger: when X happens, show camera Y."""
+    """Add or edit a PIP trigger: when X happens, show camera (or image) Y."""
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
         return await self._form("user", user_input, {})

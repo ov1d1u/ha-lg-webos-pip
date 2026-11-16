@@ -1,4 +1,4 @@
-"""LG webOS PIP: show Home Assistant cameras as picture-in-picture on LG webOS TVs."""
+"""LG webOS PIP: show Home Assistant cameras and images as picture-in-picture on LG webOS TVs."""
 
 from __future__ import annotations
 
@@ -27,6 +27,7 @@ from .const import (
     SERVICE_CLOSE,
     SERVICE_SEND_CONNECTION,
     SERVICE_SHOW,
+    SOURCE_DOMAINS,
 )
 from .controller import PipController
 
@@ -40,7 +41,7 @@ SHOW_SCHEMA = vol.Schema(
     vol.All(
         {
             **TV_SCHEMA,
-            vol.Exclusive(CONF_CAMERA, "source"): cv.entity_id,
+            vol.Exclusive(CONF_CAMERA, "source"): cv.entity_domain(SOURCE_DOMAINS),
             vol.Exclusive(CONF_URL, "source"): cv.string,
             vol.Optional(CONF_TITLE): cv.string,
             vol.Optional(CONF_MODE): vol.In(MODES),

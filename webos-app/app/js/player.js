@@ -5,6 +5,8 @@
  *   mjpeg    - HA camera_proxy_stream in an <img>. Default: drawn on the graphics
  *              plane, so it doesn't compete with live TV for the hardware video decoder.
  *   snapshot - polls HA camera_proxy stills. Slowest, but works with every camera.
+ *   image    - image.* entities (whatever the mode): HA image_proxy in an <img>,
+ *              reloaded each time the entity reports a new picture.
  *   hls      - HA camera/stream (LL-HLS) in a <video>, via hls.js or native playback.
  *   webrtc   - HA camera/webrtc/offer (HA 2024.11+, go2rtc) in a <video>.
  *   url      - any URL: .m3u8 -> hls, mjpeg-looking -> <img>, otherwise <video>.
@@ -17,6 +19,10 @@
   'use strict';
 
   var FIRST_FRAME_TIMEOUT = 15000;
+
+  function isImageEntity(entityId) {
+    return String(entityId || '').indexOf('image.') === 0;
+  }
 
   function Player(videoEl, imgEl, onState) {
     this.video = videoEl;
@@ -49,6 +55,7 @@
 
     var started;
     if (source.url) started = self.playUrl(ha, source.url, gen);
+    else if (isImageEntity(source.camera)) { mode = 'image'; started = self.playImageEntity(ha, source.camera, gen); }
     else if (mode === 'snapshot') started = self.playSnapshots(ha, source.camera, source.refresh, gen);
     else if (mode === 'hls') started = ha.hlsUrl(source.camera).then(function (u) { return self.playHls(u, gen); });
     else if (mode === 'webrtc') started = self.playWebRtc(ha, source.camera, gen);
@@ -99,6 +106,35 @@
         if (img.naturalWidth > 0) { clearInterval(timer); resolve(); }
       }, 100);
       self.cleanup.push(function () { clearInterval(timer); img.onerror = null; });
+    });
+  };
+
+  Player.prototype.playImageEntity = function (ha, entityId, gen) {
+    var self = this;
+    function load() {
+      return ha.imageUrl(entityId).then(function (url) {
+        return new Promise(function (resolve, reject) {
+          // Preload, so the old picture stays up until the new one is ready.
+          var pre = new Image();
+          pre.onload = function () {
+            if (gen !== self.gen) return;
+            self.img.src = url;
+            self.img.classList.remove('hidden');
+            resolve();
+          };
+          pre.onerror = function () { reject(new Error('No picture from ' + entityId)); };
+          pre.src = url;
+        });
+      });
+    }
+    return load().then(function () {
+      if (gen !== self.gen) return;
+      return ha.watchState(entityId, function () {
+        if (gen === self.gen) load().catch(function () { /* keep the last picture */ });
+      }).then(function (unsubscribe) {
+        if (gen !== self.gen) unsubscribe();
+        else self.cleanup.push(unsubscribe);
+      }, function () { /* no live updates; the first picture still shows */ });
     });
   };
 

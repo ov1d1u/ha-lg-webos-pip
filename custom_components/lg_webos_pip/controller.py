@@ -155,7 +155,7 @@ class PipController:
     async def async_show(self, display: dict[str, Any], *, raise_if_off: bool = False) -> None:
         params = self.build_params(display)
         if not params.get(CONF_CAMERA) and not params.get(CONF_URL):
-            raise HomeAssistantError("Choose a camera or a URL to show")
+            raise HomeAssistantError("Choose a camera, an image or a URL to show")
         await self._launch(params, raise_if_off=raise_if_off)
 
     async def async_close(self, *, raise_if_off: bool = False) -> None:

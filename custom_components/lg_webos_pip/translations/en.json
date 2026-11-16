@@ -62,12 +62,12 @@
       "step": {
         "user": {
           "title": "PIP trigger",
-          "description": "When one of the entities changes to the trigger state while the TV is on, show a camera or URL on the TV.",
+          "description": "When one of the entities changes to the trigger state while the TV is on, show a camera, an image or a URL on the TV.",
           "data": {
             "name": "Name",
             "trigger_entities": "Trigger entities",
             "trigger_state": "Trigger state",
-            "camera": "Camera",
+            "camera": "Camera or image",
             "url": "Or a URL",
             "title": "Label",
             "mode": "Stream type",
@@ -78,8 +78,9 @@
           "data_description": {
             "trigger_entities": "e.g. a doorbell binary sensor or event entity.",
             "trigger_state": "Leave empty: binary sensors, switches and input booleans fire on \"on\", everything else (e.g. event entities) on any change.",
-            "url": "Instead of a camera: an HLS (.m3u8), MJPEG or video URL, or an HA path like /media/local/clip.mp4.",
-            "title": "Text shown in the PIP. Defaults to the camera name.",
+            "camera": "A camera, or an image entity (e.g. a doorbell snapshot): its picture updates whenever the image does.",
+            "url": "Instead of a camera or image: an HLS (.m3u8), MJPEG or video URL, or an HA path like /media/local/clip.mp4.",
+            "title": "Text shown in the PIP. Defaults to the camera or image name.",
             "mode": "Leave empty to use the TV's default.",
             "position": "Leave empty to use the TV's default.",
             "size": "Leave empty to use the TV's default.",
@@ -88,12 +89,12 @@
         },
         "reconfigure": {
           "title": "PIP trigger",
-          "description": "When one of the entities changes to the trigger state while the TV is on, show a camera or URL on the TV.",
+          "description": "When one of the entities changes to the trigger state while the TV is on, show a camera, an image or a URL on the TV.",
           "data": {
             "name": "Name",
             "trigger_entities": "Trigger entities",
             "trigger_state": "Trigger state",
-            "camera": "Camera",
+            "camera": "Camera or image",
             "url": "Or a URL",
             "title": "Label",
             "mode": "Stream type",
@@ -104,8 +105,9 @@
           "data_description": {
             "trigger_entities": "e.g. a doorbell binary sensor or event entity.",
             "trigger_state": "Leave empty: binary sensors, switches and input booleans fire on \"on\", everything else (e.g. event entities) on any change.",
-            "url": "Instead of a camera: an HLS (.m3u8), MJPEG or video URL, or an HA path like /media/local/clip.mp4.",
-            "title": "Text shown in the PIP. Defaults to the camera name.",
+            "camera": "A camera, or an image entity (e.g. a doorbell snapshot): its picture updates whenever the image does.",
+            "url": "Instead of a camera or image: an HLS (.m3u8), MJPEG or video URL, or an HA path like /media/local/clip.mp4.",
+            "title": "Text shown in the PIP. Defaults to the camera or image name.",
             "mode": "Leave empty to use the TV's default.",
             "position": "Leave empty to use the TV's default.",
             "size": "Leave empty to use the TV's default.",
@@ -114,7 +116,7 @@
         }
       },
       "error": {
-        "camera_or_url": "Choose either a camera or a URL."
+        "camera_or_url": "Choose either a camera or image, or a URL."
       },
       "abort": {
         "reconfigure_successful": "PIP trigger updated."
@@ -163,19 +165,19 @@
   "services": {
     "show": {
       "name": "Show PIP",
-      "description": "Shows a camera or URL as picture-in-picture on the TV. Does nothing while the TV is off.",
+      "description": "Shows a camera, an image or a URL as picture-in-picture on the TV. Does nothing while the TV is off.",
       "fields": {
         "tv": {
           "name": "TV",
           "description": "The TV's media player. Optional when only one TV is set up."
         },
         "camera": {
-          "name": "Camera",
-          "description": "Camera entity to show."
+          "name": "Camera or image",
+          "description": "Camera or image entity to show. An image updates whenever it changes."
         },
         "url": {
           "name": "URL",
-          "description": "Instead of a camera: HLS, MJPEG or video URL, or an HA path like /media/local/clip.mp4."
+          "description": "Instead of a camera or image: HLS, MJPEG or video URL, or an HA path like /media/local/clip.mp4."
         },
         "title": {
           "name": "Label",

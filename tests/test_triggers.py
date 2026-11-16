@@ -5,6 +5,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
+import voluptuous as vol
 
 from homeassistant.const import ATTR_ENTITY_ID
 from homeassistant.core import HomeAssistant, ServiceCall
@@ -218,3 +219,16 @@ async def test_missing_webostv_service(hass: HomeAssistant, tv) -> None:
     await setup_entry(hass, make_entry())
     with pytest.raises(HomeAssistantError, match="LG webOS TV integration"):
         await hass.services.async_call(DOMAIN, "show", {"camera": CAMERA}, blocking=True)
+
+
+async def test_image_entity_source(hass: HomeAssistant, tv, webos_calls) -> None:
+    hass.states.async_set("image.doorbell_snapshot", "2026-11-16T10:00:00+00:00", {"friendly_name": "Doorbell Snapshot"})
+    await setup_entry(hass, make_entry())
+    await hass.services.async_call(DOMAIN, "show", {"camera": "image.doorbell_snapshot"}, blocking=True)
+    (params,) = launched(webos_calls)
+    assert params["camera"] == "image.doorbell_snapshot"
+    assert params["title"] == "Doorbell Snapshot"
+
+    # other domains are rejected
+    with pytest.raises(vol.Invalid):
+        await hass.services.async_call(DOMAIN, "show", {"camera": "sensor.temperature"}, blocking=True)

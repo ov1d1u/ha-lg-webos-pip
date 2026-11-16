@@ -11,5 +11,7 @@
   "transparent": true,
   "defaultWindowType": "overlay",
   "disableBackHistoryAPI": true,
+  "noSplashOnLaunch": true,
+  "spinnerOnLaunch": false,
   "requiredACG": []
 }

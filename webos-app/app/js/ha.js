@@ -175,6 +175,32 @@
     return this.signPath('/api/camera_proxy_stream/' + entityId, 24 * 3600);
   };
 
+  /**
+   * An image entity's current picture. The cache-busting parameter goes in
+   * before signing (HA signs the query too), so each new picture gets a new URL.
+   */
+  HAClient.prototype.imageUrl = function (entityId) {
+    return this.signPath('/api/image_proxy/' + entityId + '?v=' + Date.now(), 60);
+  };
+
+  /**
+   * Calls onChange whenever the entity's state changes (an image entity's state
+   * is the time of its latest picture). Resolves with an unsubscribe function.
+   */
+  HAClient.prototype.watchState = function (entityId, onChange) {
+    var last = null;
+    return this.subscribe({ type: 'subscribe_entities', entity_ids: [entityId] }, function (ev) {
+      // First message: {a: {id: {s, ...}}}; later: {c: {id: {'+': {s, ...}}}}.
+      var full = ev.a && ev.a[entityId];
+      var diff = ev.c && ev.c[entityId] && ev.c[entityId]['+'];
+      var state = full ? full.s : diff && diff.s;
+      if (state === undefined || state === last) return;
+      var first = last === null;
+      last = state;
+      if (!first) onChange(state);
+    });
+  };
+
   HAClient.prototype.hlsUrl = function (entityId) {
     var self = this;
     return self.send({ type: 'camera/stream', entity_id: entityId, format: 'hls' })
